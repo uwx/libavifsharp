@@ -1,5 +1,5 @@
 
-namespace LibAvifSharp;
+namespace LibAvifSharp.NativeTypes;
 
 internal enum AvifRGBFormat
 {

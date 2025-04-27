@@ -1,98 +1,116 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
+using LibAvifSharp.NativeTypes;
+using SkiaSharp;
 
 namespace LibAvifSharp;
 
-[StructLayout(LayoutKind.Sequential)]
-internal struct AvifEncoder
+public unsafe static partial class AvifEncoder
 {
-    // Defaults to AVIF_CODEC_CHOICE_AUTO: Preference determined by order in availableCodecs table (avif.c)
-    public AvifCodecChoice CodecChoice;
 
-    // Defaults to 1. If < 2, multithreading is disabled. See also 'Understanding maxThreads' above.
-    public int MaxThreads;
+    public static void Encode(SKBitmap bm, string outputPath, Action<EncoderSetttings>? settings = null)
+    {
+        var encoderSettings = new EncoderSetttings();
+        if(settings != null)
+        {
+            settings(encoderSettings);
+        }
 
-    // Speed range: [AVIF_SPEED_SLOWEST - AVIF_SPEED_FASTEST]. Slower should make for a better quality
-    // image in fewer bytes. AVIF_SPEED_DEFAULT means "Leave the AV1 codec to its default speed settings".
-    // If avifEncoder uses rav1e, the speed value is directly passed through (0-10). If libaom is used,
-    // a combination of settings are tweaked to simulate this speed range.
-    public int Speed;
+        RegisterNativeLibraryLoader();
+        var pixels = bm.GetPixels();
 
-    // For image sequences (animations), maximum interval between keyframes. Any set of |keyframeInterval|
-    // consecutive frames will have at least one keyframe. When it is 0, no restriction is applied.
-    public int KeyframeInterval;
+        var image = avifImageCreate((uint)bm.Width, (uint)bm.Height, (uint)(bm.ColorType == SKColorType.Bgra8888 ? 8 : 16), encoderSettings.PixelFormat);
+    
 
-    // For image sequences (animations), timescale of the media in Hz, i.e. the number of time units per second.
-    public ulong Timescale;
-    // For image sequences, number of times the image sequence should be repeated. This can also be set to
-    // AVIF_REPETITION_COUNT_INFINITE for infinite repetitions.
-    // Essentially, if repetitionCount is a non-negative integer `n`, then the image sequence should be
-    // played back `n + 1` times. Defaults to AVIF_REPETITION_COUNT_INFINITE.
-    public int RepetitionCount;
+        var rgb = new AvifRGBImage();
 
-    // EXPERIMENTAL: A non-zero value indicates a layered (progressive) image.
-    // Range: [0 - (AVIF_MAX_AV1_LAYER_COUNT-1)].
-    // To encode a progressive image, set `extraLayerCount` to the number of extra images, then call
-    // `avifEncoderAddImage()` or `avifEncoderAddImageGrid()` exactly `encoder->extraLayerCount+1` times.
-    public uint ExtraLayerCount;
+        avifRGBImageSetDefaults(ref rgb, image);
 
-    // Encode quality for the YUV image, in [AVIF_QUALITY_WORST - AVIF_QUALITY_BEST].
-    public int Quality;
-    // Encode quality for the alpha layer if present, in [AVIF_QUALITY_WORST - AVIF_QUALITY_BEST].
-    public int QualityAlpha;
-    public int MinQuantizer;      // Deprecated, use `quality` instead.
-    public int MaxQuantizer;      // Deprecated, use `quality` instead.
-    public int MinQuantizerAlpha; // Deprecated, use `qualityAlpha` instead.
-    public int MaxQuantizerAlpha; // Deprecated, use `qualityAlpha` instead.
+        rgb.Pixels = pixels;
+        rgb.RowBytes = (uint)bm.RowBytes;
+        rgb.Format = AvifRGBFormat.AVIF_RGB_FORMAT_BGRA;
 
-    // Tiling splits the image into a grid of smaller images (tiles), allowing parallelization of
-    // encoding/decoding and/or incremental decoding. Tiling also allows encoding larger images.
-    // To enable tiling, set tileRowsLog2 > 0 and/or tileColsLog2 > 0, or set autoTiling to AVIF_TRUE.
-    // Range: [0-6], where the value indicates a request for 2^n tiles in that dimension.
-    public int TileRowsLog2;
-    public int TileColsLog2;
-    // If autoTiling is set to AVIF_TRUE, libavif ignores tileRowsLog2 and tileColsLog2 and
-    // automatically chooses suitable tiling values.
-    public AvifBool AutoTiling;
+        var result = avifImageRGBToYUV(image, ref rgb);
+        if(result != AvifResult.AVIF_RESULT_OK)
+        {
+            throw new Exception($"Failed to convert RGB to YUV: {result}");
+        }
 
-    // Up/down scaling of the image to perform before encoding.
-    public AvifScalingMode ScalingMode;
+        var encoderPtr = avifEncoderCreate();
 
-    // --------------------------------------------------------------------------------------------
-    // Outputs
+        var encoder = Marshal.PtrToStructure<NativeTypes.AvifEncoder>(encoderPtr);
 
-    // Stats from the most recent write.
-    public AvifIOStats IoStats;
+        encoder.Quality = encoderSettings.Quality;
+        encoder.QualityAlpha = encoderSettings.QualityAlpha;
+        encoder.CodecChoice = encoderSettings.CodecChoice;
+        encoder.Speed = encoderSettings.Speed;
 
-    // Additional diagnostics (such as detailed error state).
-    public AvifDiagnostics Diag;
+        Marshal.StructureToPtr(encoder, encoderPtr, false);
 
-    // --------------------------------------------------------------------------------------------
-    // Internals
+        AvifResult addImageResult = avifEncoderAddImage(encoderPtr, image, 1, AvifAddImageFlag.AVIF_ADD_IMAGE_FLAG_SINGLE);
+        if (addImageResult != AvifResult.AVIF_RESULT_OK)
+        {
+            throw new Exception($"Failed to add image: {addImageResult}");
+        }
 
-    //struct avifEncoderData * data;
-    public IntPtr AvifEncoderData;
-    //struct avifCodecSpecificOptions * csOptions;
-    public IntPtr AvifCodecSpecificOptions;
+        AvifRWData output = new AvifRWData();
+        avifEncoderFinish(encoderPtr, ref output);
 
-    // Version 1.0.0 ends here.
-    // --------------------------------------------------------------------------------------------
+        var data = new Span<byte>(output.Data.ToPointer(), (int)output.Size);
 
-    // Defaults to AVIF_HEADER_DEFAULT
-    AvifHeaderFormatFlags headerFormat; // Changeable encoder setting.
+        File.WriteAllBytes(outputPath, data);
 
-    // Version 1.1.0 ends here.
-    // --------------------------------------------------------------------------------------------
+        avifEncoderDestroy(encoderPtr);
+    }
 
-    // Encode quality for the gain map image if present, in [AVIF_QUALITY_WORST - AVIF_QUALITY_BEST].
-    public int QualityGainMap; // Changeable encoder setting.
+    [LibraryImport("libavif")]
+    private static partial IntPtr avifImageCreate(uint width, uint height, uint depth, AvifPixelFormat yuvFormat);
 
-    // Version 1.2.0 ends here. Add any new members after this line.
-    // --------------------------------------------------------------------------------------------
+    [LibraryImport("libavif")]
+    private static partial IntPtr avifEncoderCreate();
 
-/*
-#if defined(AVIF_ENABLE_EXPERIMENTAL_SAMPLE_TRANSFORM)
-    // Perform extra steps at encoding and decoding to extend AV1 features using bundled additional image items.
-    avifSampleTransformRecipe sampleTransformRecipe; // Changeable encoder setting.
-#endif
-*/
+    [LibraryImport("libavif")]
+    private static partial AvifResult avifEncoderAddImage(IntPtr encoder, IntPtr image, ulong duration, AvifAddImageFlag flags);
+
+    [LibraryImport("libavif")]
+    private static partial  AvifResult avifEncoderFinish(IntPtr encoder, ref AvifRWData output);
+
+    [LibraryImport("libavif")]
+    private static partial int avifEncoderDestroy(IntPtr encoder);
+
+    [LibraryImport("libavif")]
+    private static partial void avifRGBImageSetDefaults(in AvifRGBImage rgb, IntPtr image);
+
+    [LibraryImport("libavif")]
+    private static partial AvifResult avifImageRGBToYUV(IntPtr image, in AvifRGBImage rgb);
+
+
+    private static object _lock = new object();
+    private static bool resolverSet = false;
+    private static void RegisterNativeLibraryLoader()
+    {
+        lock(_lock)
+        {
+            if(resolverSet)
+                return;
+
+            resolverSet = true;
+            NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
+        }
+    }
+
+    private static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    {
+        if (libraryName == "libavif")
+        {
+            // On systems with AVX2 support, load a different library.
+            if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+            {
+                return NativeLibrary.Load("/home/spacy/src/libavif/build/libavif.so.16.2.1", assembly, searchPath);
+            }
+        }
+
+        // Otherwise, fallback to default import resolver.
+        return IntPtr.Zero;
+    }
 }

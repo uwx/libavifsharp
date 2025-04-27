@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace LibAvifSharp;
+namespace LibAvifSharp.NativeTypes;
 
 [StructLayout(LayoutKind.Sequential)]
 internal struct AvifRGBImage

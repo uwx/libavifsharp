@@ -1,5 +1,6 @@
-using System;
 using System.Runtime.InteropServices;
+
+namespace LibAvifSharp.NativeTypes;
 
 [StructLayout(LayoutKind.Sequential)]
 public struct AvifRWData

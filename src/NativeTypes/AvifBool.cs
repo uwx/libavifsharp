@@ -1,3 +1,5 @@
+namespace LibAvifSharp.NativeTypes;
+
 internal enum AvifBool
 {
     AVIF_FALSE = 0,

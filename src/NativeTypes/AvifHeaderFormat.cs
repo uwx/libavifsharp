@@ -1,4 +1,4 @@
-namespace LibAvifSharp;
+namespace LibAvifSharp.NativeTypes;
 
 public enum AvifHeaderFormat
 {

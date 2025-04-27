@@ -1,4 +1,4 @@
-namespace LibAvifSharp;
+namespace LibAvifSharp.NativeTypes;
 
 [Flags]
 internal enum AvifHeaderFormatFlags

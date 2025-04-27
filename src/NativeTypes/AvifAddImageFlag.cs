@@ -1,3 +1,5 @@
+namespace LibAvifSharp.NativeTypes;
+
 [Flags]
 internal enum AvifAddImageFlag  {
     AVIF_ADD_IMAGE_FLAG_NONE = 0,

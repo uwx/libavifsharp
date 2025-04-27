@@ -1,4 +1,4 @@
-namespace LibAvifSharp;
+namespace LibAvifSharp.NativeTypes;
 public enum AvifPixelFormat {
     VIF_PIXEL_FORMAT_NONE = 0,
 

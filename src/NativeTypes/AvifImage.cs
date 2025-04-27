@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
+using LibAvifSharp;
 
-namespace LibAvifSharp;
+namespace LibAvifSharp.NativeTypes;
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct AvifImage

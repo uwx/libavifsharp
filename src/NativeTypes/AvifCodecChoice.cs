@@ -1,3 +1,5 @@
+namespace LibAvifSharp.NativeTypes;
+
 public enum AvifCodecChoice
 {
     /// <summary>

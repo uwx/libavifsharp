@@ -1,3 +1,5 @@
+namespace LibAvifSharp.NativeTypes;
+
 internal enum AvifMatrixCoefficients : ushort {
     AVIF_MATRIX_COEFFICIENTS_IDENTITY = 0,
     AVIF_MATRIX_COEFFICIENTS_BT709 = 1,

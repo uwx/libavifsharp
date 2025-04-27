@@ -1,3 +1,5 @@
+using LibAvifSharp.NativeTypes;
+
 namespace LibAvifSharp;
 
 public class EncoderSetttings

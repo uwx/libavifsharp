@@ -1,3 +1,5 @@
+namespace LibAvifSharp.NativeTypes;
+
 internal enum AvifColorPrimaries : ushort
 {
     // This is actually reserved, but libavif uses it as a sentinel value.

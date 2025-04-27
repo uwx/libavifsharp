@@ -1,4 +1,6 @@
 
+namespace LibAvifSharp.NativeTypes;
+
 [Flags]
 internal enum AvifTransformFlags
 {
