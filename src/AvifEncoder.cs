@@ -6,7 +6,13 @@ namespace LibAvifSharp;
 
 public static class AvifEncoder
 {
-    public static void Encode(SKBitmap bm, string outputPath, Action<EncoderSetttings>? settings = null)
+    public static EncodedImage Encode(SKImage image, Action<EncoderSetttings>? settings = null)
+    {
+        using var bitmap = SKBitmap.FromImage(image);
+        return Encode(bitmap, settings);
+    }
+
+    public static EncodedImage Encode(SKBitmap bm, Action<EncoderSetttings>? settings = null)
     {
         var encoderSettings = new EncoderSetttings();
         if(settings != null)
@@ -55,13 +61,10 @@ public static class AvifEncoder
         NativeInterop.avifEncoderFinish(encoderPtr, ref output);
         NativeInterop.avifEncoderDestroy(encoderPtr);
         NativeInterop.avifImageDestroy(image);
+        
+        // dont free RGB pixels as they are owned by the bitmap
+        // NativeInterop.avifRGBImageFreePixels(ref rgb);
 
-        unsafe
-        {
-            var data = new Span<byte>(output.Data.ToPointer(), (int)output.Size);
-            File.WriteAllBytes(outputPath, data);
-        }
-
-        NativeInterop.avifRWDataFree(ref output);
+        return new EncodedImage(output);
     }
 }

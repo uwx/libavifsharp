@@ -31,6 +31,9 @@ internal static partial class NativeInterop
     [LibraryImport("libavif")]
     public static partial void avifRWDataFree(ref AvifRWData data);
 
+    [LibraryImport("libavif")]
+    public static partial void avifRGBImageFreePixels(ref AvifRGBImage rgb);
+
 
     private static object _lock = new object();
     private static bool resolverSet = false;
