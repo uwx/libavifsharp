@@ -71,7 +71,7 @@ internal static partial class NativeInterop
                             return NativeLibrary.Load(libraryPath, assembly, searchPath);
                         }
                     }
-				}
+                }
             }
         }
 
