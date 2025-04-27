@@ -70,13 +70,15 @@ internal struct AvifEncoder
     // Internals
 
     //struct avifEncoderData * data;
+    public IntPtr AvifEncoderData;
     //struct avifCodecSpecificOptions * csOptions;
+    public IntPtr AvifCodecSpecificOptions;
 
     // Version 1.0.0 ends here.
     // --------------------------------------------------------------------------------------------
 
     // Defaults to AVIF_HEADER_DEFAULT
-    // AvifHeaderFormatFlags headerFormat; // Changeable encoder setting.
+    AvifHeaderFormatFlags headerFormat; // Changeable encoder setting.
 
     // Version 1.1.0 ends here.
     // --------------------------------------------------------------------------------------------

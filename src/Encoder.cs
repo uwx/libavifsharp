@@ -40,9 +40,7 @@ public unsafe static partial class Encoder
         encoder->Quality = encoderSettings.Quality;
         encoder->QualityAlpha = encoderSettings.QualityAlpha;
         encoder->CodecChoice = encoderSettings.CodecChoice;
-        // encoder->Speed = 4;
-
-        // Marshal.StructureToPtr(managedEncoder, encoder, false);
+        encoder->Speed = encoderSettings.Speed;
 
         AvifResult addImageResult = avifEncoderAddImage(encoder, image, 1, AvifAddImageFlag.AVIF_ADD_IMAGE_FLAG_SINGLE);
 
@@ -56,26 +54,26 @@ public unsafe static partial class Encoder
         avifEncoderDestroy(encoder);
     }
 
-    [DllImport("libavif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern IntPtr avifImageCreate(uint width, uint height, uint depth, AvifPixelFormat yuvFormat);
+    [LibraryImport("libavif")]
+    private static partial IntPtr avifImageCreate(uint width, uint height, uint depth, AvifPixelFormat yuvFormat);
 
-    [DllImport("libavif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern AvifEncoder* avifEncoderCreate();
+    [LibraryImport("libavif")]
+    private static partial AvifEncoder* avifEncoderCreate();
 
-    [DllImport("libavif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern AvifResult avifEncoderAddImage(AvifEncoder* encoder, IntPtr image, ulong duration, AvifAddImageFlag flags);
+    [LibraryImport("libavif")]
+    private static partial AvifResult avifEncoderAddImage(AvifEncoder* encoder, IntPtr image, ulong duration, AvifAddImageFlag flags);
 
-    [DllImport("libavif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern  AvifResult avifEncoderFinish(AvifEncoder * encoder, ref AvifRWData output);
+    [LibraryImport("libavif")]
+    private static partial  AvifResult avifEncoderFinish(AvifEncoder * encoder, ref AvifRWData output);
 
     [LibraryImport("libavif")]
     private static partial int avifEncoderDestroy(AvifEncoder* encoder);
 
-    [DllImport("libavif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern void avifRGBImageSetDefaults([In] ref AvifRGBImage rgb, IntPtr image);
+    [LibraryImport("libavif")]
+    private static partial void avifRGBImageSetDefaults(in AvifRGBImage rgb, IntPtr image);
 
-    [DllImport("libavif", CallingConvention = CallingConvention.Cdecl)]
-    private static extern AvifResult avifImageRGBToYUV(IntPtr image, [In] ref AvifRGBImage rgb);
+    [LibraryImport("libavif")]
+    private static partial AvifResult avifImageRGBToYUV(IntPtr image, in AvifRGBImage rgb);
 
 
     private static void RegisterNativeLibraryLoader()
