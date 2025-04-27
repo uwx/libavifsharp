@@ -6,7 +6,7 @@ namespace LibAvifSharp;
 internal struct AvifEncoder
 {
     // Defaults to AVIF_CODEC_CHOICE_AUTO: Preference determined by order in availableCodecs table (avif.c)
-    public int CodecChoice;
+    public AvifCodecChoice CodecChoice;
 
     // Defaults to 1. If < 2, multithreading is disabled. See also 'Understanding maxThreads' above.
     public int MaxThreads;

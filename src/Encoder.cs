@@ -7,12 +7,18 @@ namespace LibAvifSharp;
 public unsafe static partial class Encoder
 {
 
-    public static void Encode(SKBitmap bm, string outputPath, int quality = 60)
+    public static void Encode(SKBitmap bm, string outputPath, Action<EncoderSetttings>? settings = null)
     {
+        var encoderSettings = new EncoderSetttings();
+        if(settings != null)
+        {
+            settings(encoderSettings);
+        }
+
         RegisterNativeLibraryLoader();
         var pixels = bm.GetPixels();
 
-        var image = avifImageCreate((uint)bm.Width, (uint)bm.Height, (uint)(bm.ColorType == SKColorType.Bgra8888 ? 8 : 16), AvifPixelFormat.AVIF_PIXEL_FORMAT_YUV444);
+        var image = avifImageCreate((uint)bm.Width, (uint)bm.Height, (uint)(bm.ColorType == SKColorType.Bgra8888 ? 8 : 16), encoderSettings.PixelFormat);
     
 
         var rgb = new AvifRGBImage();
@@ -31,8 +37,10 @@ public unsafe static partial class Encoder
 
         var encoder = avifEncoderCreate();
 
-        encoder->Quality = quality;
-        encoder->QualityAlpha = Constants.AVIF_QUALITY_LOSSLESS;;
+        encoder->Quality = encoderSettings.Quality;
+        encoder->QualityAlpha = encoderSettings.QualityAlpha;
+        encoder->CodecChoice = encoderSettings.CodecChoice;
+        // encoder->Speed = 4;
 
         // Marshal.StructureToPtr(managedEncoder, encoder, false);
 

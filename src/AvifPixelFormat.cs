@@ -1,5 +1,5 @@
 namespace LibAvifSharp;
-internal enum AvifPixelFormat {
+public enum AvifPixelFormat {
     VIF_PIXEL_FORMAT_NONE = 0,
 
     AVIF_PIXEL_FORMAT_YUV444,
