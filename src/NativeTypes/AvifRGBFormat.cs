@@ -1,7 +1,7 @@
 
 namespace LibAvifSharp.NativeTypes;
 
-internal enum AvifRGBFormat
+public enum AvifRGBFormat
 {
     AVIF_RGB_FORMAT_RGB = 0,
     AVIF_RGB_FORMAT_RGBA, // This is the default format set in avifRGBImageSetDefaults().
