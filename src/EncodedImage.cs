@@ -1,6 +1,7 @@
+using System.Buffers;
 using LibAvifSharp.NativeTypes;
 
-public class EncodedImage : IDisposable
+public sealed class EncodedImage : MemoryManager<byte>
 {
     private AvifRWData rwData;
 
@@ -11,7 +12,8 @@ public class EncodedImage : IDisposable
         this.rwData = rwData;
     }
 
-    public Span<byte> MemorySpan {
+    public Span<byte> MemorySpan
+    {
         get
         {
             if (_disposed)
@@ -25,22 +27,28 @@ public class EncodedImage : IDisposable
         }
     }
 
-    // Implement IDisposable
-    public void Dispose()
+    public override Span<byte> GetSpan()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this); // Prevent finalizer from being called if Dispose was called
+        return MemorySpan;
     }
 
-    protected virtual void Dispose(bool disposing)
+    // Implement IDisposable
+    public override unsafe MemoryHandle Pin(int elementIndex = 0)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(EncodedImage));
+
+        return new MemoryHandle((byte*)rwData.Data.ToPointer() + elementIndex);
+    }
+
+    public override void Unpin()
+    {
+    }
+
+    protected override void Dispose(bool disposing)
     {
         if (!_disposed)
         {
-            if (disposing)
-            {
-                // Release any managed resources here (if any)
-            }
-
             // Release unmanaged resources
             if (rwData.Data != IntPtr.Zero)
             {
@@ -49,11 +57,5 @@ public class EncodedImage : IDisposable
 
             _disposed = true;
         }
-    }
-
-    // Finalizer (destructor) - only called if Dispose was NOT called
-    ~EncodedImage()
-    {
-        Dispose(false); // Call Dispose with disposing = false, as managed resources might already be garbage collected
     }
 }
